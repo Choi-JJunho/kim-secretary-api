@@ -103,7 +103,13 @@ def convert_notion_to_work_log_request(notion_payload: Dict[str, Any]) -> WorkLo
         if user_id:
             logger.info(f"📍 Database ID로부터 User ID 역조회 성공: {user_id}")
         else:
-            logger.info(f"📍 Database ID {database_id}에 매핑된 User ID 없음 (default database 사용)")
+            # 등록되지 않은 Database ID
+            logger.warning(f"⚠️ 등록되지 않은 Database ID: {database_id}")
+            raise ValueError(
+                f"등록되지 않은 Notion Database입니다. "
+                f"Database ID: {database_id}\n"
+                f"관리자에게 문의하여 USER_DATABASE_MAPPING에 등록해주세요."
+            )
 
     return WorkLogFeedbackRequest(
         action="work_log_feedback",

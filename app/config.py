@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     # Notion User to Database Mapping
     user_database_mapping: str = Field(
-        default='{"default":"290b3645-abb5-803f-b2d6-d8577918ac2f"}',
+        default='{}',
         description="User ID와 Notion Database ID 매핑 (JSON 형식)"
     )
 
@@ -84,7 +84,7 @@ class Settings(BaseSettings):
             database_id: Notion Database ID (하이픈 포함/미포함 모두 지원)
 
         Returns:
-            해당하는 User ID (실제 user_id 우선, 없으면 None)
+            해당하는 User ID, 등록되지 않은 DB면 None
         """
         try:
             mapping: Dict[str, str] = json.loads(self.user_database_mapping)
@@ -92,18 +92,12 @@ class Settings(BaseSettings):
             # 하이픈 제거한 버전으로 비교 (Notion ID는 하이픈 유무가 다를 수 있음)
             normalized_db_id = database_id.replace("-", "")
 
-            # 'default'가 아닌 실제 user_id를 우선 반환
-            matched_users = []
+            # 매칭되는 user_id 찾기
             for user_id, db_id in mapping.items():
                 if db_id.replace("-", "") == normalized_db_id:
-                    matched_users.append(user_id)
-
-            # 'default'가 아닌 user_id가 있으면 그것을 반환
-            for user_id in matched_users:
-                if user_id != "default":
                     return user_id
 
-            # 'default'만 있거나 매칭 없음 → None
+            # 매칭 없음
             return None
         except (json.JSONDecodeError, AttributeError):
             return None
