@@ -249,6 +249,41 @@ notion-slack-adapter/
 └── README.md
 ```
 
+## Docker 이미지 빌드 및 배포
+
+### Docker Hub에 푸시하기
+
+```bash
+# 기본 (latest 태그)
+./scripts/docker-build-push.sh
+
+# 특정 버전 태그
+./scripts/docker-build-push.sh v1.0.0
+
+# 특정 태그 (버전이 아닌 경우)
+./scripts/docker-build-push.sh production
+```
+
+스크립트는 자동으로:
+1. Docker 이미지 빌드
+2. 지정된 태그로 태깅
+3. `latest` 태그도 함께 생성 (버전 태그 사용 시)
+4. Docker Hub에 푸시
+
+### 수동으로 빌드/푸시
+
+```bash
+# 빌드
+docker build -t junho5336/kim-secretary-api:latest .
+
+# 특정 태그로 빌드
+docker build -t junho5336/kim-secretary-api:v1.0.0 .
+
+# 푸시
+docker push junho5336/kim-secretary-api:latest
+docker push junho5336/kim-secretary-api:v1.0.0
+```
+
 ## 개발
 
 ### 로컬 개발 서버 실행
