@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  webhook-adapter:
+  kim-secretary-api:
     build: .
-    container_name: notion-slack-adapter
+    container_name: kim-secretary-api
     restart: unless-stopped
 
     environment:

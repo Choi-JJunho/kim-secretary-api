@@ -1,70 +1,65 @@
-"""Data models for Notion webhook payloads"""
+"""Notion 웹훅 및 Slack 페이로드를 위한 데이터 모델"""
 
-from typing import Any, Dict, Optional
-from pydantic import BaseModel, Field
-
-
-class NotionDate(BaseModel):
-    """Notion date property"""
-    start: str
-    end: Optional[str] = None
-
-
-class NotionDateProperty(BaseModel):
-    """Notion date property wrapper"""
-    date: NotionDate
-
-
-class NotionSelect(BaseModel):
-    """Notion select property"""
-    name: str
-    color: Optional[str] = None
-
-
-class NotionSelectProperty(BaseModel):
-    """Notion select property wrapper"""
-    select: NotionSelect
-
-
-class NotionRichText(BaseModel):
-    """Notion rich text"""
-    plain_text: str
-
-
-class NotionRichTextProperty(BaseModel):
-    """Notion rich text property wrapper"""
-    rich_text: list[NotionRichText]
-
-
-class NotionProperties(BaseModel):
-    """Notion database properties"""
-    # Define expected properties here
-    # Actual property names will be in Korean or custom names
-    properties: Dict[str, Any] = Field(default_factory=dict)
-
-    class Config:
-        extra = "allow"  # Allow additional fields
-
-
-class NotionWebhookPayload(BaseModel):
-    """Notion webhook button payload"""
-    # Notion sends nested structure
-    # Exact structure TBD - need to test with actual webhook
-    properties: Optional[Dict[str, Any]] = None
-
-    class Config:
-        extra = "allow"  # Allow additional fields we don't know yet
+from typing import Optional
+from pydantic import BaseModel, Field, field_validator
 
 
 class WorkLogFeedbackRequest(BaseModel):
-    """Work log feedback request for Slack webhook"""
-    action: str = "work_log_feedback"
-    date: str
-    ai_provider: str = "gemini"
-    flavor: str = "normal"
-    user_id: Optional[str] = None
+    """업무일지 피드백 요청 모델
+
+    Slack webhook으로 전송될 업무일지 피드백 요청 데이터를 정의합니다.
+
+    Attributes:
+        action: 작업 타입 (고정값: "work_log_feedback")
+        date: 업무일지 작성일 (YYYY-MM-DD 형식)
+        ai_provider: AI 제공자 (gemini, claude, codex, ollama 중 하나)
+        flavor: 피드백 스타일 (spicy, normal, mild 중 하나)
+        user_id: Slack 사용자 ID (선택사항)
+    """
+
+    action: str = Field(default="work_log_feedback", description="작업 타입")
+    date: str = Field(..., description="업무일지 작성일 (YYYY-MM-DD)")
+    ai_provider: str = Field(default="gemini", description="AI 제공자")
+    flavor: str = Field(default="normal", description="피드백 스타일")
+    user_id: Optional[str] = Field(default=None, description="Slack 사용자 ID")
+
+    @field_validator("ai_provider")
+    @classmethod
+    def validate_ai_provider(cls, v: str) -> str:
+        """AI 제공자 유효성 검증"""
+        allowed = {"gemini", "claude", "codex", "ollama"}
+        if v.lower() not in allowed:
+            raise ValueError(f"ai_provider는 {allowed} 중 하나여야 합니다")
+        return v.lower()
+
+    @field_validator("flavor")
+    @classmethod
+    def validate_flavor(cls, v: str) -> str:
+        """피드백 스타일 유효성 검증"""
+        allowed = {"spicy", "normal", "mild"}
+        if v.lower() not in allowed:
+            raise ValueError(f"flavor는 {allowed} 중 하나여야 합니다")
+        return v.lower()
+
+    @field_validator("date")
+    @classmethod
+    def validate_date_format(cls, v: str) -> str:
+        """날짜 형식 유효성 검증 (YYYY-MM-DD)"""
+        from datetime import datetime
+        try:
+            datetime.strptime(v, "%Y-%m-%d")
+            return v
+        except ValueError:
+            raise ValueError("date는 YYYY-MM-DD 형식이어야 합니다")
 
 
 class SlackWebhookPayload(BaseModel):
-    """Slack incoming webhook payload"""
-    text: str
+    """Slack incoming webhook 페이로드
+
+    Slack으로 메시지를 전송하기 위한 페이로드입니다.
+
+    Attributes:
+        text: 전송할 메시지 내용 (JSON 문자열 또는 일반 텍스트)
+    """
+
+    text: str = Field(..., description="전송할 메시지 내용")

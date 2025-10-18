@@ -75,28 +75,54 @@ Notion webhook button에서 이 URL을 호출하도록 설정합니다.
 **요청 예시** (Notion이 보내는 형식):
 ```json
 {
-  "properties": {
-    "작성일": {
-      "date": {
-        "start": "2025-10-18"
-      }
-    },
-    "AI 제공자": {
-      "select": {
-        "name": "claude"
-      }
-    },
-    "맛": {
-      "select": {
-        "name": "spicy"
-      }
-    },
-    "사용자 ID": {
-      "rich_text": [
-        {
-          "plain_text": "U05258DMFEE"
+  "source": {
+    "type": "automation",
+    "automation_id": "...",
+    "action_id": "...",
+    "event_id": "...",
+    "user_id": "...",
+    "attempt": 1
+  },
+  "data": {
+    "object": "page",
+    "id": "...",
+    "properties": {
+      "작성일": {
+        "id": "...",
+        "type": "date",
+        "date": {
+          "start": "2025-10-18",
+          "end": null,
+          "time_zone": null
         }
-      ]
+      },
+      "AI 제공자": {
+        "id": "...",
+        "type": "select",
+        "select": {
+          "id": "...",
+          "name": "claude",
+          "color": "blue"
+        }
+      },
+      "맛": {
+        "id": "...",
+        "type": "select",
+        "select": {
+          "id": "...",
+          "name": "spicy",
+          "color": "red"
+        }
+      },
+      "사용자 ID": {
+        "id": "...",
+        "type": "rich_text",
+        "rich_text": [
+          {
+            "plain_text": "U05258DMFEE"
+          }
+        ]
+      }
     }
   }
 }
@@ -283,6 +309,36 @@ docker build -t junho5336/kim-secretary-api:v1.0.0 .
 docker push junho5336/kim-secretary-api:latest
 docker push junho5336/kim-secretary-api:v1.0.0
 ```
+
+### 크로스플랫폼 빌드 (Multi-Architecture)
+
+다양한 플랫폼(AMD64, ARM64)을 지원하는 이미지를 빌드하려면 Docker Buildx를 사용합니다.
+
+```bash
+# 1. Buildx builder 생성 (최초 1회)
+docker buildx create --name multiplatform-builder --use
+docker buildx inspect --bootstrap
+
+# 2. 크로스플랫폼 빌드 및 푸시
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t junho5336/kim-secretary-api:latest \
+  -t junho5336/kim-secretary-api:v1.0.0 \
+  --push \
+  .
+
+# 3. Production 태그로 빌드
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t junho5336/kim-secretary-api:prod \
+  --push \
+  .
+```
+
+**주의사항:**
+- `--push` 플래그는 빌드 후 자동으로 레지스트리에 푸시합니다
+- 로컬에 저장하려면 `--load` 사용 (단, 단일 플랫폼만 가능)
+- ARM64는 Apple Silicon Mac, Raspberry Pi 등에서 사용됩니다
 
 ## 개발
 
