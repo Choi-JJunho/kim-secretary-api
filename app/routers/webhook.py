@@ -50,11 +50,15 @@ def extract_property_value(prop: Any, prop_type: str) -> Any:
         return None
 
 
-def convert_notion_to_work_log_request(notion_payload: Dict[str, Any]) -> WorkLogFeedbackRequest:
+def convert_notion_to_work_log_request(
+    notion_payload: Dict[str, Any],
+    taste_override: str = None
+) -> WorkLogFeedbackRequest:
     """Notion 웹훅 페이로드를 업무일지 피드백 요청으로 변환
 
     Args:
         notion_payload: Notion에서 전송된 원본 웹훅 페이로드
+        taste_override: Query parameter로 전달된 taste 값 (선택사항)
 
     Returns:
         변환된 WorkLogFeedbackRequest 객체
@@ -89,9 +93,13 @@ def convert_notion_to_work_log_request(notion_payload: Dict[str, Any]) -> WorkLo
     ai_provider_prop = properties.get("AI 제공자") or properties.get("AI") or properties.get("AI Provider")
     ai_provider = extract_property_value(ai_provider_prop, "select") or "claude"
 
-    # 선택 필드: 피드백 맛
-    flavor_prop = properties.get("맛") or properties.get("피드백 맛") or properties.get("Flavor")
-    flavor = extract_property_value(flavor_prop, "select") or "normal"
+    # 선택 필드: 피드백 맛 (taste_override가 있으면 우선 사용)
+    if taste_override:
+        flavor = taste_override
+        logger.info(f"🌶️ Query parameter taste 사용: {flavor}")
+    else:
+        flavor_prop = properties.get("맛") or properties.get("피드백 맛") or properties.get("Flavor")
+        flavor = extract_property_value(flavor_prop, "select") or "normal"
 
     # 선택 필드: 사용자 ID
     user_id_prop = properties.get("사용자 ID") or properties.get("User ID")
@@ -124,7 +132,8 @@ def convert_notion_to_work_log_request(notion_payload: Dict[str, Any]) -> WorkLo
 @router.post("/notion-to-slack")
 async def handle_notion_webhook(
     request: Request,
-    x_api_key: str = Header(None)
+    x_api_key: str = Header(None),
+    taste: str = None
 ):
     """Notion 웹훅을 받아서 Slack으로 전달
 
@@ -134,6 +143,7 @@ async def handle_notion_webhook(
     Args:
         request: FastAPI 요청 객체
         x_api_key: API 인증 키 (선택사항, Header)
+        taste: 피드백 맛 (선택사항, Query Parameter: spicy, normal, mild)
 
     Returns:
         성공 메시지 및 변환된 요청 데이터
@@ -158,7 +168,7 @@ async def handle_notion_webhook(
         logger.debug(f"페이로드: {json.dumps(notion_payload, indent=2, ensure_ascii=False)}")
 
         # 업무일지 피드백 요청으로 변환
-        work_log_request = convert_notion_to_work_log_request(notion_payload)
+        work_log_request = convert_notion_to_work_log_request(notion_payload, taste_override=taste)
 
         logger.info(f"✅ 업무일지 요청으로 변환 완료: {work_log_request.model_dump()}")
 
