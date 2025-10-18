@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  webhook-adapter:
+    build: .
+    container_name: notion-slack-adapter
+    restart: unless-stopped
+
+    environment:
+      # Application Configuration
+      TZ: Asia/Seoul
+
+      # Slack Configuration
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+
+      # Server Configuration
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-8000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      # Security (Optional)
+      API_KEY: ${API_KEY:-}
+
+    ports:
+      - "${PORT:-8000}:8000"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
+
+    # Logging configuration
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
