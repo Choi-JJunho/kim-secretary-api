@@ -60,13 +60,20 @@ def convert_notion_to_work_log_request(notion_payload: Dict[str, Any]) -> WorkLo
         변환된 WorkLogFeedbackRequest 객체
 
     Raises:
-        ValueError: 필수 필드('작성일')가 없는 경우
+        ValueError: 필수 필드가 없거나 database_id 검증 실패
     """
     logger.info(f"Notion 페이로드 변환 중: {json.dumps(notion_payload, indent=2, ensure_ascii=False)}")
 
     # data.properties 객체에서 페이지 속성 추출
     data = notion_payload.get("data", {})
     properties = data.get("properties", {})
+
+    # parent.database_id 추출
+    parent = data.get("parent", {})
+    database_id = parent.get("database_id")
+
+    if database_id:
+        logger.info(f"📊 Database ID: {database_id}")
 
     if not properties:
         raise ValueError("Notion 페이로드에 properties가 없습니다")
@@ -80,7 +87,7 @@ def convert_notion_to_work_log_request(notion_payload: Dict[str, Any]) -> WorkLo
 
     # 선택 필드: AI 제공자
     ai_provider_prop = properties.get("AI 제공자") or properties.get("AI") or properties.get("AI Provider")
-    ai_provider = extract_property_value(ai_provider_prop, "select") or "gemini"
+    ai_provider = extract_property_value(ai_provider_prop, "select") or "claude"
 
     # 선택 필드: 피드백 맛
     flavor_prop = properties.get("맛") or properties.get("피드백 맛") or properties.get("Flavor")
@@ -90,12 +97,21 @@ def convert_notion_to_work_log_request(notion_payload: Dict[str, Any]) -> WorkLo
     user_id_prop = properties.get("사용자 ID") or properties.get("User ID")
     user_id = extract_property_value(user_id_prop, "rich_text")
 
+    # user_id가 없으면 database_id로부터 역조회 시도
+    if not user_id and database_id:
+        user_id = settings.get_user_id_by_database(database_id)
+        if user_id:
+            logger.info(f"📍 Database ID로부터 User ID 역조회 성공: {user_id}")
+        else:
+            logger.info(f"📍 Database ID {database_id}에 매핑된 User ID 없음 (default database 사용)")
+
     return WorkLogFeedbackRequest(
         action="work_log_feedback",
         date=date,
         ai_provider=ai_provider,  # 모델 내부에서 validation 및 lower() 처리
         flavor=flavor,  # 모델 내부에서 validation 및 lower() 처리
-        user_id=user_id
+        user_id=user_id,
+        database_id=database_id  # 모델 내부에서 하이픈 제거 처리
     )
 
 

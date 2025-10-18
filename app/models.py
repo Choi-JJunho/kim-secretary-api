@@ -15,6 +15,7 @@ class WorkLogFeedbackRequest(BaseModel):
         ai_provider: AI 제공자 (gemini, claude, codex, ollama 중 하나)
         flavor: 피드백 스타일 (spicy, normal, mild 중 하나)
         user_id: Slack 사용자 ID (선택사항)
+        database_id: Notion Database ID (하이픈 제거 형식, 선택사항)
     """
 
     action: str = Field(default="work_log_feedback", description="작업 타입")
@@ -22,6 +23,7 @@ class WorkLogFeedbackRequest(BaseModel):
     ai_provider: str = Field(default="gemini", description="AI 제공자")
     flavor: str = Field(default="normal", description="피드백 스타일")
     user_id: Optional[str] = Field(default=None, description="Slack 사용자 ID")
+    database_id: Optional[str] = Field(default=None, description="Notion Database ID (하이픈 제거)")
 
     @field_validator("ai_provider")
     @classmethod
@@ -51,6 +53,14 @@ class WorkLogFeedbackRequest(BaseModel):
             return v
         except ValueError:
             raise ValueError("date는 YYYY-MM-DD 형식이어야 합니다")
+
+    @field_validator("database_id")
+    @classmethod
+    def normalize_database_id(cls, v: Optional[str]) -> Optional[str]:
+        """Database ID 정규화 (하이픈 제거)"""
+        if v is None:
+            return None
+        return v.replace("-", "")
 
 
 class SlackWebhookPayload(BaseModel):
