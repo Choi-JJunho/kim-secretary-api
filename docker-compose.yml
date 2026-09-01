@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   kim-secretary-api:
     image: docker.io/junho5336/kim-secretary-api:prod

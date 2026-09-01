@@ -28,7 +28,14 @@ ENV/
 
 # Environment variables
 .env
+.env.*
 .env.local
+!.env.example
+
+# Keys / certificates
+*.pem
+*.key
+*.p12
 
 # IDE
 .vscode/

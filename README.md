@@ -35,9 +35,10 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 HOST=0.0.0.0
 PORT=8000
 LOG_LEVEL=info
+USER_DATABASE_MAPPING={"USER_ID_1":"database-id-1"}
 ```
 
-### 3. 로컬에서 실행
+### 2. 로컬에서 실행
 
 ```bash
 # 가상환경 생성
@@ -56,7 +57,7 @@ python main.py
 ## 프로젝트 구조
 
 ```
-notion-slack-adapter/
+kim-secretary-api/
 ├── app/
 │   ├── __init__.py
 │   ├── config.py          # 설정 관리
